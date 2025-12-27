@@ -1,0 +1,29 @@
+"use strict";
+// auth/auth.routes.ts
+// Authentication routes
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_controller_1 = require("./auth.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+const authController = new auth_controller_1.AuthController();
+/**
+ * @route   POST /api/auth/register
+ * @desc    Register new user
+ * @access  Public
+ */
+router.post('/register', authController.register);
+/**
+ * @route   POST /api/auth/login
+ * @desc    Login user
+ * @access  Public
+ */
+router.post('/login', authController.login);
+/**
+ * @route   GET /api/auth/me
+ * @desc    Get current user
+ * @access  Private
+ */
+router.get('/me', auth_middleware_1.authMiddleware, authController.me);
+exports.default = router;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYXV0aC5yb3V0ZXMuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJhdXRoLnJvdXRlcy50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiO0FBQUEsc0JBQXNCO0FBQ3RCLHdCQUF3Qjs7QUFFeEIscUNBQWlDO0FBQ2pDLHVEQUFtRDtBQUNuRCxvRUFBZ0U7QUFFaEUsTUFBTSxNQUFNLEdBQUcsSUFBQSxnQkFBTSxHQUFFLENBQUM7QUFDeEIsTUFBTSxjQUFjLEdBQUcsSUFBSSxnQ0FBYyxFQUFFLENBQUM7QUFFNUM7Ozs7R0FJRztBQUNILE1BQU0sQ0FBQyxJQUFJLENBQUMsV0FBVyxFQUFFLGNBQWMsQ0FBQyxRQUFRLENBQUMsQ0FBQztBQUVsRDs7OztHQUlHO0FBQ0gsTUFBTSxDQUFDLElBQUksQ0FBQyxRQUFRLEVBQUUsY0FBYyxDQUFDLEtBQUssQ0FBQyxDQUFDO0FBRTVDOzs7O0dBSUc7QUFDSCxNQUFNLENBQUMsR0FBRyxDQUFDLEtBQUssRUFBRSxnQ0FBYyxFQUFFLGNBQWMsQ0FBQyxFQUFFLENBQUMsQ0FBQztBQUVyRCxrQkFBZSxNQUFNLENBQUMiLCJzb3VyY2VzQ29udGVudCI6WyIvLyBhdXRoL2F1dGgucm91dGVzLnRzXHJcbi8vIEF1dGhlbnRpY2F0aW9uIHJvdXRlc1xyXG5cclxuaW1wb3J0IHsgUm91dGVyIH0gZnJvbSAnZXhwcmVzcyc7XHJcbmltcG9ydCB7IEF1dGhDb250cm9sbGVyIH0gZnJvbSAnLi9hdXRoLmNvbnRyb2xsZXInO1xyXG5pbXBvcnQgeyBhdXRoTWlkZGxld2FyZSB9IGZyb20gJy4uL21pZGRsZXdhcmVzL2F1dGgubWlkZGxld2FyZSc7XHJcblxyXG5jb25zdCByb3V0ZXIgPSBSb3V0ZXIoKTtcclxuY29uc3QgYXV0aENvbnRyb2xsZXIgPSBuZXcgQXV0aENvbnRyb2xsZXIoKTtcclxuXHJcbi8qKlxyXG4gKiBAcm91dGUgICBQT1NUIC9hcGkvYXV0aC9yZWdpc3RlclxyXG4gKiBAZGVzYyAgICBSZWdpc3RlciBuZXcgdXNlclxyXG4gKiBAYWNjZXNzICBQdWJsaWNcclxuICovXHJcbnJvdXRlci5wb3N0KCcvcmVnaXN0ZXInLCBhdXRoQ29udHJvbGxlci5yZWdpc3Rlcik7XHJcblxyXG4vKipcclxuICogQHJvdXRlICAgUE9TVCAvYXBpL2F1dGgvbG9naW5cclxuICogQGRlc2MgICAgTG9naW4gdXNlclxyXG4gKiBAYWNjZXNzICBQdWJsaWNcclxuICovXHJcbnJvdXRlci5wb3N0KCcvbG9naW4nLCBhdXRoQ29udHJvbGxlci5sb2dpbik7XHJcblxyXG4vKipcclxuICogQHJvdXRlICAgR0VUIC9hcGkvYXV0aC9tZVxyXG4gKiBAZGVzYyAgICBHZXQgY3VycmVudCB1c2VyXHJcbiAqIEBhY2Nlc3MgIFByaXZhdGVcclxuICovXHJcbnJvdXRlci5nZXQoJy9tZScsIGF1dGhNaWRkbGV3YXJlLCBhdXRoQ29udHJvbGxlci5tZSk7XHJcblxyXG5leHBvcnQgZGVmYXVsdCByb3V0ZXI7XHJcbiJdfQ==

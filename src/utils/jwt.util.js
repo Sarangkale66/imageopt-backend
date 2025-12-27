@@ -1,0 +1,29 @@
+"use strict";
+// utils/jwt.util.ts
+// JWT token generation and verification utilities
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.verifyToken = exports.generateToken = void 0;
+const jsonwebtoken_1 = require("jsonwebtoken");
+const env_1 = require("../config/env");
+/**
+ * Generate JWT token for user
+ */
+const generateToken = (payload) => {
+    return jsonwebtoken_1.default.sign(payload, env_1.env.JWT_SECRET, {
+        expiresIn: env_1.env.JWT_EXPIRE,
+    });
+};
+exports.generateToken = generateToken;
+/**
+ * Verify and decode JWT token
+ */
+const verifyToken = (token) => {
+    try {
+        return jsonwebtoken_1.default.verify(token, env_1.env.JWT_SECRET);
+    }
+    catch (error) {
+        throw new Error('Invalid or expired token');
+    }
+};
+exports.verifyToken = verifyToken;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiand0LnV0aWwuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJqd3QudXRpbC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiO0FBQUEsb0JBQW9CO0FBQ3BCLGtEQUFrRDs7O0FBRWxELCtDQUErQjtBQUMvQix1Q0FBb0M7QUFRcEM7O0dBRUc7QUFDSSxNQUFNLGFBQWEsR0FBRyxDQUFDLE9BQW1CLEVBQVUsRUFBRTtJQUMzRCxPQUFPLHNCQUFHLENBQUMsSUFBSSxDQUFDLE9BQU8sRUFBRSxTQUFHLENBQUMsVUFBVSxFQUFFO1FBQ3ZDLFNBQVMsRUFBRSxTQUFHLENBQUMsVUFBVTtLQUMxQixDQUFDLENBQUM7QUFDTCxDQUFDLENBQUM7QUFKVyxRQUFBLGFBQWEsaUJBSXhCO0FBRUY7O0dBRUc7QUFDSSxNQUFNLFdBQVcsR0FBRyxDQUFDLEtBQWEsRUFBYyxFQUFFO0lBQ3ZELElBQUksQ0FBQztRQUNILE9BQU8sc0JBQUcsQ0FBQyxNQUFNLENBQUMsS0FBSyxFQUFFLFNBQUcsQ0FBQyxVQUFVLENBQWUsQ0FBQztJQUN6RCxDQUFDO0lBQUMsT0FBTyxLQUFLLEVBQUUsQ0FBQztRQUNmLE1BQU0sSUFBSSxLQUFLLENBQUMsMEJBQTBCLENBQUMsQ0FBQztJQUM5QyxDQUFDO0FBQ0gsQ0FBQyxDQUFDO0FBTlcsUUFBQSxXQUFXLGVBTXRCIiwic291cmNlc0NvbnRlbnQiOlsiLy8gdXRpbHMvand0LnV0aWwudHNcclxuLy8gSldUIHRva2VuIGdlbmVyYXRpb24gYW5kIHZlcmlmaWNhdGlvbiB1dGlsaXRpZXNcclxuXHJcbmltcG9ydCBqd3QgZnJvbSAnanNvbndlYnRva2VuJztcclxuaW1wb3J0IHsgZW52IH0gZnJvbSAnLi4vY29uZmlnL2Vudic7XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIEp3dFBheWxvYWQge1xyXG4gIHVzZXJJZDogc3RyaW5nO1xyXG4gIGVtYWlsOiBzdHJpbmc7XHJcbiAgcm9sZTogc3RyaW5nO1xyXG59XHJcblxyXG4vKipcclxuICogR2VuZXJhdGUgSldUIHRva2VuIGZvciB1c2VyXHJcbiAqL1xyXG5leHBvcnQgY29uc3QgZ2VuZXJhdGVUb2tlbiA9IChwYXlsb2FkOiBKd3RQYXlsb2FkKTogc3RyaW5nID0+IHtcclxuICByZXR1cm4gand0LnNpZ24ocGF5bG9hZCwgZW52LkpXVF9TRUNSRVQsIHtcclxuICAgIGV4cGlyZXNJbjogZW52LkpXVF9FWFBJUkUsXHJcbiAgfSk7XHJcbn07XHJcblxyXG4vKipcclxuICogVmVyaWZ5IGFuZCBkZWNvZGUgSldUIHRva2VuXHJcbiAqL1xyXG5leHBvcnQgY29uc3QgdmVyaWZ5VG9rZW4gPSAodG9rZW46IHN0cmluZyk6IEp3dFBheWxvYWQgPT4ge1xyXG4gIHRyeSB7XHJcbiAgICByZXR1cm4gand0LnZlcmlmeSh0b2tlbiwgZW52LkpXVF9TRUNSRVQpIGFzIEp3dFBheWxvYWQ7XHJcbiAgfSBjYXRjaCAoZXJyb3IpIHtcclxuICAgIHRocm93IG5ldyBFcnJvcignSW52YWxpZCBvciBleHBpcmVkIHRva2VuJyk7XHJcbiAgfVxyXG59O1xyXG4iXX0=

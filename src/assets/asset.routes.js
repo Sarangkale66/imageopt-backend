@@ -1,0 +1,62 @@
+"use strict";
+// assets/asset.routes.ts
+// Asset management routes
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const asset_controller_1 = require("./asset.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const upload_middleware_1 = require("../middlewares/upload.middleware");
+const router = (0, express_1.Router)();
+const assetController = new asset_controller_1.AssetController();
+// All asset routes require authentication
+router.use(auth_middleware_1.authMiddleware);
+/**
+ * @route   POST /api/assets/upload-url
+ * @desc    Generate presigned S3 upload URL
+ * @access  Private
+ */
+router.post('/upload-url', assetController.generateUploadUrl);
+/**
+ * @route   POST /api/assets/direct-upload
+ * @desc    Direct file upload via form-data
+ * @access  Private
+ */
+router.post('/direct-upload', upload_middleware_1.upload.single('file'), assetController.directUpload);
+/**
+ * @route   POST /api/assets
+ * @desc    Create asset metadata after upload
+ * @access  Private
+ */
+router.post('/', assetController.createAsset);
+/**
+ * @route   GET /api/assets
+ * @desc    List user's assets
+ * @access  Private
+ */
+router.get('/', assetController.listAssets);
+/**
+ * @route   GET /api/assets/:id
+ * @desc    Get single asset
+ * @access  Private
+ */
+router.get('/:id', assetController.getAsset);
+/**
+ * @route   GET /api/assets/:id/stats
+ * @desc    Get asset bandwidth statistics
+ * @access  Private
+ */
+router.get('/:id/stats', assetController.getAssetStats);
+/**
+ * @route   PUT /api/assets/:id/restore
+ * @desc    Restore soft-deleted asset
+ * @access  Private
+ */
+router.put('/:id/restore', assetController.restoreAsset);
+/**
+ * @route   DELETE /api/assets/:id
+ * @desc    Delete asset (soft delete)
+ * @access  Private
+ */
+router.delete('/:id', assetController.deleteAsset);
+exports.default = router;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYXNzZXQucm91dGVzLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiYXNzZXQucm91dGVzLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQSx5QkFBeUI7QUFDekIsMEJBQTBCOztBQUUxQixxQ0FBaUM7QUFDakMseURBQXFEO0FBQ3JELG9FQUErRDtBQUMvRCx3RUFBMEQ7QUFFMUQsTUFBTSxNQUFNLEdBQUcsSUFBQSxnQkFBTSxHQUFFLENBQUM7QUFDeEIsTUFBTSxlQUFlLEdBQUcsSUFBSSxrQ0FBZSxFQUFFLENBQUM7QUFFOUMsMENBQTBDO0FBQzFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsZ0NBQWMsQ0FBQyxDQUFDO0FBRTNCOzs7O0dBSUc7QUFDSCxNQUFNLENBQUMsSUFBSSxDQUFDLGFBQWEsRUFBRSxlQUFlLENBQUMsaUJBQWlCLENBQUMsQ0FBQztBQUU5RDs7OztHQUlHO0FBQ0gsTUFBTSxDQUFDLElBQUksQ0FBQyxnQkFBZ0IsRUFBRSwwQkFBTSxDQUFDLE1BQU0sQ0FBQyxNQUFNLENBQUMsRUFBRSxlQUFlLENBQUMsWUFBWSxDQUFDLENBQUM7QUFFbkY7Ozs7R0FJRztBQUNILE1BQU0sQ0FBQyxJQUFJLENBQUMsR0FBRyxFQUFFLGVBQWUsQ0FBQyxXQUFXLENBQUMsQ0FBQztBQUU5Qzs7OztHQUlHO0FBQ0gsTUFBTSxDQUFDLEdBQUcsQ0FBQyxHQUFHLEVBQUUsZUFBZSxDQUFDLFVBQVUsQ0FBQyxDQUFDO0FBRTVDOzs7O0dBSUc7QUFDSCxNQUFNLENBQUMsR0FBRyxDQUFDLE1BQU0sRUFBRSxlQUFlLENBQUMsUUFBUSxDQUFDLENBQUM7QUFFN0M7Ozs7R0FJRztBQUNILE1BQU0sQ0FBQyxHQUFHLENBQUMsWUFBWSxFQUFFLGVBQWUsQ0FBQyxhQUFhLENBQUMsQ0FBQztBQUV4RDs7OztHQUlHO0FBQ0gsTUFBTSxDQUFDLEdBQUcsQ0FBQyxjQUFjLEVBQUUsZUFBZSxDQUFDLFlBQVksQ0FBQyxDQUFDO0FBRXpEOzs7O0dBSUc7QUFDSCxNQUFNLENBQUMsTUFBTSxDQUFDLE1BQU0sRUFBRSxlQUFlLENBQUMsV0FBVyxDQUFDLENBQUM7QUFFbkQsa0JBQWUsTUFBTSxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiLy8gYXNzZXRzL2Fzc2V0LnJvdXRlcy50c1xyXG4vLyBBc3NldCBtYW5hZ2VtZW50IHJvdXRlc1xyXG5cclxuaW1wb3J0IHsgUm91dGVyIH0gZnJvbSAnZXhwcmVzcyc7XHJcbmltcG9ydCB7IEFzc2V0Q29udHJvbGxlciB9IGZyb20gJy4vYXNzZXQuY29udHJvbGxlcic7XHJcbmltcG9ydCB7IGF1dGhNaWRkbGV3YXJlfSBmcm9tICcuLi9taWRkbGV3YXJlcy9hdXRoLm1pZGRsZXdhcmUnO1xyXG5pbXBvcnQgeyB1cGxvYWQgfSBmcm9tICcuLi9taWRkbGV3YXJlcy91cGxvYWQubWlkZGxld2FyZSc7XHJcblxyXG5jb25zdCByb3V0ZXIgPSBSb3V0ZXIoKTtcclxuY29uc3QgYXNzZXRDb250cm9sbGVyID0gbmV3IEFzc2V0Q29udHJvbGxlcigpO1xyXG5cclxuLy8gQWxsIGFzc2V0IHJvdXRlcyByZXF1aXJlIGF1dGhlbnRpY2F0aW9uXHJcbnJvdXRlci51c2UoYXV0aE1pZGRsZXdhcmUpO1xyXG5cclxuLyoqXHJcbiAqIEByb3V0ZSAgIFBPU1QgL2FwaS9hc3NldHMvdXBsb2FkLXVybFxyXG4gKiBAZGVzYyAgICBHZW5lcmF0ZSBwcmVzaWduZWQgUzMgdXBsb2FkIFVSTFxyXG4gKiBAYWNjZXNzICBQcml2YXRlXHJcbiAqL1xyXG5yb3V0ZXIucG9zdCgnL3VwbG9hZC11cmwnLCBhc3NldENvbnRyb2xsZXIuZ2VuZXJhdGVVcGxvYWRVcmwpO1xyXG5cclxuLyoqXHJcbiAqIEByb3V0ZSAgIFBPU1QgL2FwaS9hc3NldHMvZGlyZWN0LXVwbG9hZFxyXG4gKiBAZGVzYyAgICBEaXJlY3QgZmlsZSB1cGxvYWQgdmlhIGZvcm0tZGF0YVxyXG4gKiBAYWNjZXNzICBQcml2YXRlXHJcbiAqL1xyXG5yb3V0ZXIucG9zdCgnL2RpcmVjdC11cGxvYWQnLCB1cGxvYWQuc2luZ2xlKCdmaWxlJyksIGFzc2V0Q29udHJvbGxlci5kaXJlY3RVcGxvYWQpO1xyXG5cclxuLyoqXHJcbiAqIEByb3V0ZSAgIFBPU1QgL2FwaS9hc3NldHNcclxuICogQGRlc2MgICAgQ3JlYXRlIGFzc2V0IG1ldGFkYXRhIGFmdGVyIHVwbG9hZFxyXG4gKiBAYWNjZXNzICBQcml2YXRlXHJcbiAqL1xyXG5yb3V0ZXIucG9zdCgnLycsIGFzc2V0Q29udHJvbGxlci5jcmVhdGVBc3NldCk7XHJcblxyXG4vKipcclxuICogQHJvdXRlICAgR0VUIC9hcGkvYXNzZXRzXHJcbiAqIEBkZXNjICAgIExpc3QgdXNlcidzIGFzc2V0c1xyXG4gKiBAYWNjZXNzICBQcml2YXRlXHJcbiAqL1xyXG5yb3V0ZXIuZ2V0KCcvJywgYXNzZXRDb250cm9sbGVyLmxpc3RBc3NldHMpO1xyXG5cclxuLyoqXHJcbiAqIEByb3V0ZSAgIEdFVCAvYXBpL2Fzc2V0cy86aWRcclxuICogQGRlc2MgICAgR2V0IHNpbmdsZSBhc3NldFxyXG4gKiBAYWNjZXNzICBQcml2YXRlXHJcbiAqL1xyXG5yb3V0ZXIuZ2V0KCcvOmlkJywgYXNzZXRDb250cm9sbGVyLmdldEFzc2V0KTtcclxuXHJcbi8qKlxyXG4gKiBAcm91dGUgICBHRVQgL2FwaS9hc3NldHMvOmlkL3N0YXRzXHJcbiAqIEBkZXNjICAgIEdldCBhc3NldCBiYW5kd2lkdGggc3RhdGlzdGljc1xyXG4gKiBAYWNjZXNzICBQcml2YXRlXHJcbiAqL1xyXG5yb3V0ZXIuZ2V0KCcvOmlkL3N0YXRzJywgYXNzZXRDb250cm9sbGVyLmdldEFzc2V0U3RhdHMpO1xyXG5cclxuLyoqXHJcbiAqIEByb3V0ZSAgIFBVVCAvYXBpL2Fzc2V0cy86aWQvcmVzdG9yZVxyXG4gKiBAZGVzYyAgICBSZXN0b3JlIHNvZnQtZGVsZXRlZCBhc3NldFxyXG4gKiBAYWNjZXNzICBQcml2YXRlXHJcbiAqL1xyXG5yb3V0ZXIucHV0KCcvOmlkL3Jlc3RvcmUnLCBhc3NldENvbnRyb2xsZXIucmVzdG9yZUFzc2V0KTtcclxuXHJcbi8qKlxyXG4gKiBAcm91dGUgICBERUxFVEUgL2FwaS9hc3NldHMvOmlkXHJcbiAqIEBkZXNjICAgIERlbGV0ZSBhc3NldCAoc29mdCBkZWxldGUpXHJcbiAqIEBhY2Nlc3MgIFByaXZhdGVcclxuICovXHJcbnJvdXRlci5kZWxldGUoJy86aWQnLCBhc3NldENvbnRyb2xsZXIuZGVsZXRlQXNzZXQpO1xyXG5cclxuZXhwb3J0IGRlZmF1bHQgcm91dGVyO1xyXG4iXX0=

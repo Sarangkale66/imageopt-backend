@@ -1,0 +1,32 @@
+"use strict";
+// config/database.ts
+// MongoDB connection setup
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.connectDatabase = void 0;
+const mongoose_1 = require("mongoose");
+const env_1 = require("./env");
+const connectDatabase = async () => {
+    try {
+        const conn = await mongoose_1.default.connect(env_1.env.MONGODB_URI);
+        console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+        console.log(`   Database: ${conn.connection.name}`);
+    }
+    catch (error) {
+        console.error('❌ MongoDB Connection Error:', error);
+        process.exit(1);
+    }
+};
+exports.connectDatabase = connectDatabase;
+// Handle connection events
+mongoose_1.default.connection.on('disconnected', () => {
+    console.log('⚠️  MongoDB disconnected');
+});
+mongoose_1.default.connection.on('error', (err) => {
+    console.error('❌ MongoDB error:', err);
+});
+process.on('SIGINT', async () => {
+    await mongoose_1.default.connection.close();
+    console.log('MongoDB connection closed through app termination');
+    process.exit(0);
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZGF0YWJhc2UuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJkYXRhYmFzZS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiO0FBQUEscUJBQXFCO0FBQ3JCLDJCQUEyQjs7O0FBRTNCLHVDQUFnQztBQUNoQywrQkFBNEI7QUFFckIsTUFBTSxlQUFlLEdBQUcsS0FBSyxJQUFtQixFQUFFO0lBQ3ZELElBQUksQ0FBQztRQUNILE1BQU0sSUFBSSxHQUFHLE1BQU0sa0JBQVEsQ0FBQyxPQUFPLENBQUMsU0FBRyxDQUFDLFdBQVcsQ0FBQyxDQUFDO1FBRXJELE9BQU8sQ0FBQyxHQUFHLENBQUMsd0JBQXdCLElBQUksQ0FBQyxVQUFVLENBQUMsSUFBSSxFQUFFLENBQUMsQ0FBQztRQUM1RCxPQUFPLENBQUMsR0FBRyxDQUFDLGdCQUFnQixJQUFJLENBQUMsVUFBVSxDQUFDLElBQUksRUFBRSxDQUFDLENBQUM7SUFDdEQsQ0FBQztJQUFDLE9BQU8sS0FBSyxFQUFFLENBQUM7UUFDZixPQUFPLENBQUMsS0FBSyxDQUFDLDZCQUE2QixFQUFFLEtBQUssQ0FBQyxDQUFDO1FBQ3BELE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLENBQUM7SUFDbEIsQ0FBQztBQUNILENBQUMsQ0FBQztBQVZXLFFBQUEsZUFBZSxtQkFVMUI7QUFFRiwyQkFBMkI7QUFDM0Isa0JBQVEsQ0FBQyxVQUFVLENBQUMsRUFBRSxDQUFDLGNBQWMsRUFBRSxHQUFHLEVBQUU7SUFDMUMsT0FBTyxDQUFDLEdBQUcsQ0FBQywwQkFBMEIsQ0FBQyxDQUFDO0FBQzFDLENBQUMsQ0FBQyxDQUFDO0FBRUgsa0JBQVEsQ0FBQyxVQUFVLENBQUMsRUFBRSxDQUFDLE9BQU8sRUFBRSxDQUFDLEdBQUcsRUFBRSxFQUFFO0lBQ3RDLE9BQU8sQ0FBQyxLQUFLLENBQUMsa0JBQWtCLEVBQUUsR0FBRyxDQUFDLENBQUM7QUFDekMsQ0FBQyxDQUFDLENBQUM7QUFFSCxPQUFPLENBQUMsRUFBRSxDQUFDLFFBQVEsRUFBRSxLQUFLLElBQUksRUFBRTtJQUM5QixNQUFNLGtCQUFRLENBQUMsVUFBVSxDQUFDLEtBQUssRUFBRSxDQUFDO0lBQ2xDLE9BQU8sQ0FBQyxHQUFHLENBQUMsbURBQW1ELENBQUMsQ0FBQztJQUNqRSxPQUFPLENBQUMsSUFBSSxDQUFDLENBQUMsQ0FBQyxDQUFDO0FBQ2xCLENBQUMsQ0FBQyxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiLy8gY29uZmlnL2RhdGFiYXNlLnRzXHJcbi8vIE1vbmdvREIgY29ubmVjdGlvbiBzZXR1cFxyXG5cclxuaW1wb3J0IG1vbmdvb3NlIGZyb20gJ21vbmdvb3NlJztcclxuaW1wb3J0IHsgZW52IH0gZnJvbSAnLi9lbnYnO1xyXG5cclxuZXhwb3J0IGNvbnN0IGNvbm5lY3REYXRhYmFzZSA9IGFzeW5jICgpOiBQcm9taXNlPHZvaWQ+ID0+IHtcclxuICB0cnkge1xyXG4gICAgY29uc3QgY29ubiA9IGF3YWl0IG1vbmdvb3NlLmNvbm5lY3QoZW52Lk1PTkdPREJfVVJJKTtcclxuICAgIFxyXG4gICAgY29uc29sZS5sb2coYOKchSBNb25nb0RCIENvbm5lY3RlZDogJHtjb25uLmNvbm5lY3Rpb24uaG9zdH1gKTtcclxuICAgIGNvbnNvbGUubG9nKGAgICBEYXRhYmFzZTogJHtjb25uLmNvbm5lY3Rpb24ubmFtZX1gKTtcclxuICB9IGNhdGNoIChlcnJvcikge1xyXG4gICAgY29uc29sZS5lcnJvcign4p2MIE1vbmdvREIgQ29ubmVjdGlvbiBFcnJvcjonLCBlcnJvcik7XHJcbiAgICBwcm9jZXNzLmV4aXQoMSk7XHJcbiAgfVxyXG59O1xyXG5cclxuLy8gSGFuZGxlIGNvbm5lY3Rpb24gZXZlbnRzXHJcbm1vbmdvb3NlLmNvbm5lY3Rpb24ub24oJ2Rpc2Nvbm5lY3RlZCcsICgpID0+IHtcclxuICBjb25zb2xlLmxvZygn4pqg77iPICBNb25nb0RCIGRpc2Nvbm5lY3RlZCcpO1xyXG59KTtcclxuXHJcbm1vbmdvb3NlLmNvbm5lY3Rpb24ub24oJ2Vycm9yJywgKGVycikgPT4ge1xyXG4gIGNvbnNvbGUuZXJyb3IoJ+KdjCBNb25nb0RCIGVycm9yOicsIGVycik7XHJcbn0pO1xyXG5cclxucHJvY2Vzcy5vbignU0lHSU5UJywgYXN5bmMgKCkgPT4ge1xyXG4gIGF3YWl0IG1vbmdvb3NlLmNvbm5lY3Rpb24uY2xvc2UoKTtcclxuICBjb25zb2xlLmxvZygnTW9uZ29EQiBjb25uZWN0aW9uIGNsb3NlZCB0aHJvdWdoIGFwcCB0ZXJtaW5hdGlvbicpO1xyXG4gIHByb2Nlc3MuZXhpdCgwKTtcclxufSk7XHJcbiJdfQ==

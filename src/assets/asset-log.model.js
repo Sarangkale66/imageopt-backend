@@ -1,0 +1,58 @@
+"use strict";
+// assets/asset-log.model.ts
+// AssetLog schema - extends existing bandwidth_logs collection
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AssetLog = void 0;
+const mongoose_1 = require("mongoose");
+const assetLogSchema = new mongoose_1.Schema({
+    assetId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Asset',
+        index: true,
+        required: false, // Optional - old logs won't have this
+    },
+    path: {
+        type: String,
+        required: true,
+        index: true,
+    },
+    bytes: {
+        type: Number,
+        required: true,
+    },
+    requestBytes: {
+        type: Number,
+    },
+    edgeResult: {
+        type: String,
+        enum: ['Hit', 'Miss', 'Error', 'RefreshHit'],
+        required: true,
+    },
+    distribution: {
+        type: String,
+    },
+    status: {
+        type: Number,
+    },
+    clientIp: {
+        type: String,
+        required: true,
+    },
+    country: {
+        type: String,
+    },
+    timestamp: {
+        type: Date,
+        required: true,
+        index: true,
+    },
+}, {
+    timestamps: false, // We have our own timestamp field
+    collection: 'bandwidth_logs', // Use existing collection from Phase 4
+});
+// Compound indexes for analytics queries
+assetLogSchema.index({ assetId: 1, timestamp: -1 });
+assetLogSchema.index({ path: 1, timestamp: -1 });
+assetLogSchema.index({ timestamp: -1 });
+exports.AssetLog = mongoose_1.default.model('AssetLog', assetLogSchema);
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYXNzZXQtbG9nLm1vZGVsLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiYXNzZXQtbG9nLm1vZGVsLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQSw0QkFBNEI7QUFDNUIsK0RBQStEOzs7QUFFL0QsdUNBQXNEO0FBZXRELE1BQU0sY0FBYyxHQUFHLElBQUksaUJBQU0sQ0FDL0I7SUFDRSxPQUFPLEVBQUU7UUFDUCxJQUFJLEVBQUUsaUJBQU0sQ0FBQyxLQUFLLENBQUMsUUFBUTtRQUMzQixHQUFHLEVBQUUsT0FBTztRQUNaLEtBQUssRUFBRSxJQUFJO1FBQ1gsUUFBUSxFQUFFLEtBQUssRUFBRSxzQ0FBc0M7S0FDeEQ7SUFDRCxJQUFJLEVBQUU7UUFDSixJQUFJLEVBQUUsTUFBTTtRQUNaLFFBQVEsRUFBRSxJQUFJO1FBQ2QsS0FBSyxFQUFFLElBQUk7S0FDWjtJQUNELEtBQUssRUFBRTtRQUNMLElBQUksRUFBRSxNQUFNO1FBQ1osUUFBUSxFQUFFLElBQUk7S0FDZjtJQUNELFlBQVksRUFBRTtRQUNaLElBQUksRUFBRSxNQUFNO0tBQ2I7SUFDRCxVQUFVLEVBQUU7UUFDVixJQUFJLEVBQUUsTUFBTTtRQUNaLElBQUksRUFBRSxDQUFDLEtBQUssRUFBRSxNQUFNLEVBQUUsT0FBTyxFQUFFLFlBQVksQ0FBQztRQUM1QyxRQUFRLEVBQUUsSUFBSTtLQUNmO0lBQ0QsWUFBWSxFQUFFO1FBQ1osSUFBSSxFQUFFLE1BQU07S0FDYjtJQUNELE1BQU0sRUFBRTtRQUNOLElBQUksRUFBRSxNQUFNO0tBQ2I7SUFDRCxRQUFRLEVBQUU7UUFDUixJQUFJLEVBQUUsTUFBTTtRQUNaLFFBQVEsRUFBRSxJQUFJO0tBQ2Y7SUFDRCxPQUFPLEVBQUU7UUFDUCxJQUFJLEVBQUUsTUFBTTtLQUNiO0lBQ0QsU0FBUyxFQUFFO1FBQ1QsSUFBSSxFQUFFLElBQUk7UUFDVixRQUFRLEVBQUUsSUFBSTtRQUNkLEtBQUssRUFBRSxJQUFJO0tBQ1o7Q0FDRixFQUNEO0lBQ0UsVUFBVSxFQUFFLEtBQUssRUFBRSxrQ0FBa0M7SUFDckQsVUFBVSxFQUFFLGdCQUFnQixFQUFFLHVDQUF1QztDQUN0RSxDQUNGLENBQUM7QUFFRix5Q0FBeUM7QUFDekMsY0FBYyxDQUFDLEtBQUssQ0FBQyxFQUFFLE9BQU8sRUFBRSxDQUFDLEVBQUUsU0FBUyxFQUFFLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQztBQUNwRCxjQUFjLENBQUMsS0FBSyxDQUFDLEVBQUUsSUFBSSxFQUFFLENBQUMsRUFBRSxTQUFTLEVBQUUsQ0FBQyxDQUFDLEVBQUUsQ0FBQyxDQUFDO0FBQ2pELGNBQWMsQ0FBQyxLQUFLLENBQUMsRUFBRSxTQUFTLEVBQUUsQ0FBQyxDQUFDLEVBQUUsQ0FBQyxDQUFDO0FBRTNCLFFBQUEsUUFBUSxHQUFHLGtCQUFRLENBQUMsS0FBSyxDQUFZLFVBQVUsRUFBRSxjQUFjLENBQUMsQ0FBQyIsInNvdXJjZXNDb250ZW50IjpbIi8vIGFzc2V0cy9hc3NldC1sb2cubW9kZWwudHNcclxuLy8gQXNzZXRMb2cgc2NoZW1hIC0gZXh0ZW5kcyBleGlzdGluZyBiYW5kd2lkdGhfbG9ncyBjb2xsZWN0aW9uXHJcblxyXG5pbXBvcnQgbW9uZ29vc2UsIHsgRG9jdW1lbnQsIFNjaGVtYSB9IGZyb20gJ21vbmdvb3NlJztcclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgSUFzc2V0TG9nIGV4dGVuZHMgRG9jdW1lbnQge1xyXG4gIGFzc2V0SWQ/OiBtb25nb29zZS5UeXBlcy5PYmplY3RJZDsgIC8vIE9wdGlvbmFsIC0gZm9yIGxpbmtpbmcgdG8gQXNzZXRcclxuICBwYXRoOiBzdHJpbmc7XHJcbiAgYnl0ZXM6IG51bWJlcjtcclxuICByZXF1ZXN0Qnl0ZXM/OiBudW1iZXI7XHJcbiAgZWRnZVJlc3VsdDogJ0hpdCcgfCAnTWlzcycgfCAnRXJyb3InIHwgJ1JlZnJlc2hIaXQnO1xyXG4gIGRpc3RyaWJ1dGlvbj86IHN0cmluZztcclxuICBzdGF0dXM/OiBudW1iZXI7XHJcbiAgY2xpZW50SXA6IHN0cmluZztcclxuICBjb3VudHJ5Pzogc3RyaW5nO1xyXG4gIHRpbWVzdGFtcDogRGF0ZTtcclxufVxyXG5cclxuY29uc3QgYXNzZXRMb2dTY2hlbWEgPSBuZXcgU2NoZW1hPElBc3NldExvZz4oXHJcbiAge1xyXG4gICAgYXNzZXRJZDoge1xyXG4gICAgICB0eXBlOiBTY2hlbWEuVHlwZXMuT2JqZWN0SWQsXHJcbiAgICAgIHJlZjogJ0Fzc2V0JyxcclxuICAgICAgaW5kZXg6IHRydWUsXHJcbiAgICAgIHJlcXVpcmVkOiBmYWxzZSwgLy8gT3B0aW9uYWwgLSBvbGQgbG9ncyB3b24ndCBoYXZlIHRoaXNcclxuICAgIH0sXHJcbiAgICBwYXRoOiB7XHJcbiAgICAgIHR5cGU6IFN0cmluZyxcclxuICAgICAgcmVxdWlyZWQ6IHRydWUsXHJcbiAgICAgIGluZGV4OiB0cnVlLFxyXG4gICAgfSxcclxuICAgIGJ5dGVzOiB7XHJcbiAgICAgIHR5cGU6IE51bWJlcixcclxuICAgICAgcmVxdWlyZWQ6IHRydWUsXHJcbiAgICB9LFxyXG4gICAgcmVxdWVzdEJ5dGVzOiB7XHJcbiAgICAgIHR5cGU6IE51bWJlcixcclxuICAgIH0sXHJcbiAgICBlZGdlUmVzdWx0OiB7XHJcbiAgICAgIHR5cGU6IFN0cmluZyxcclxuICAgICAgZW51bTogWydIaXQnLCAnTWlzcycsICdFcnJvcicsICdSZWZyZXNoSGl0J10sXHJcbiAgICAgIHJlcXVpcmVkOiB0cnVlLFxyXG4gICAgfSxcclxuICAgIGRpc3RyaWJ1dGlvbjoge1xyXG4gICAgICB0eXBlOiBTdHJpbmcsXHJcbiAgICB9LFxyXG4gICAgc3RhdHVzOiB7XHJcbiAgICAgIHR5cGU6IE51bWJlcixcclxuICAgIH0sXHJcbiAgICBjbGllbnRJcDoge1xyXG4gICAgICB0eXBlOiBTdHJpbmcsXHJcbiAgICAgIHJlcXVpcmVkOiB0cnVlLFxyXG4gICAgfSxcclxuICAgIGNvdW50cnk6IHtcclxuICAgICAgdHlwZTogU3RyaW5nLFxyXG4gICAgfSxcclxuICAgIHRpbWVzdGFtcDoge1xyXG4gICAgICB0eXBlOiBEYXRlLFxyXG4gICAgICByZXF1aXJlZDogdHJ1ZSxcclxuICAgICAgaW5kZXg6IHRydWUsXHJcbiAgICB9LFxyXG4gIH0sXHJcbiAge1xyXG4gICAgdGltZXN0YW1wczogZmFsc2UsIC8vIFdlIGhhdmUgb3VyIG93biB0aW1lc3RhbXAgZmllbGRcclxuICAgIGNvbGxlY3Rpb246ICdiYW5kd2lkdGhfbG9ncycsIC8vIFVzZSBleGlzdGluZyBjb2xsZWN0aW9uIGZyb20gUGhhc2UgNFxyXG4gIH1cclxuKTtcclxuXHJcbi8vIENvbXBvdW5kIGluZGV4ZXMgZm9yIGFuYWx5dGljcyBxdWVyaWVzXHJcbmFzc2V0TG9nU2NoZW1hLmluZGV4KHsgYXNzZXRJZDogMSwgdGltZXN0YW1wOiAtMSB9KTtcclxuYXNzZXRMb2dTY2hlbWEuaW5kZXgoeyBwYXRoOiAxLCB0aW1lc3RhbXA6IC0xIH0pO1xyXG5hc3NldExvZ1NjaGVtYS5pbmRleCh7IHRpbWVzdGFtcDogLTEgfSk7XHJcblxyXG5leHBvcnQgY29uc3QgQXNzZXRMb2cgPSBtb25nb29zZS5tb2RlbDxJQXNzZXRMb2c+KCdBc3NldExvZycsIGFzc2V0TG9nU2NoZW1hKTtcclxuIl19

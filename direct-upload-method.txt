@@ -1,0 +1,56 @@
+  /**
+   * POST /api/assets/direct-upload
+   * Direct file upload via form-data (no presigned URL)
+   */
+  directUpload = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return sendError(res, 'Not authenticated', 401);
+      }
+
+      // Check if file exists
+      if (!req.file) {
+        return sendError(res, 'No file uploaded', 400);
+      }
+
+      const file = req.file;
+      
+      // Get optional folder and custom filename from form data
+      const folder = req.body.folder as string | undefined;
+      const customFileName = req.body.customFileName as string | undefined;
+
+      // Upload to S3
+      const { s3Key, s3Bucket } = await this.s3UploadService.uploadFile(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        req.user.userId,
+        folder,
+        customFileName
+      );
+
+      // Determine asset type
+      const assetType = this.s3Service.getAssetType(file.mimetype);
+
+      // Generate CloudFront URL
+      const cloudfrontUrl = this.s3Service.generateCloudfrontUrl(s3Key);
+
+      // Create asset in database
+      const asset = await this.assetService.create(
+        req.user.userId,
+        customFileName || file.originalname,
+        assetType,
+        s3Bucket,
+        s3Key,
+        cloudfrontUrl,
+        file.size
+      );
+
+      return sendSuccess(res, {
+        asset,
+        message: 'File uploaded successfully to S3',
+      }, 'Upload successful', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to upload file', 500);
+    }
+  };
