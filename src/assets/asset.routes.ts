@@ -41,6 +41,20 @@ router.post('/', assetController.createAsset);
 router.get('/', assetController.listAssets);
 
 /**
+ * @route   GET /api/assets/folders
+ * @desc    Get list of user's folders
+ * @access  Private
+ */
+router.get('/folders', assetController.listFolders);
+
+/**
+ * @route   GET /api/assets/folders/:folder
+ * @desc    Get assets in a specific folder
+ * @access  Private
+ */
+router.get('/folders/:folder', assetController.getAssetsByFolder);
+
+/**
  * @route   GET /api/assets/:id
  * @desc    Get single asset
  * @access  Private
@@ -74,5 +88,26 @@ router.put('/:id/restore', assetController.restoreAsset);
  * @access  Private
  */
 router.delete('/:id', assetController.deleteAsset);
+
+/**
+ * @route   PUT /api/assets/:id/make-private
+ * @desc    Move asset to private folder (requires signed URL)
+ * @access  Private
+ */
+router.put('/:id/make-private', assetController.makePrivate);
+
+/**
+ * @route   PUT /api/assets/:id/make-public
+ * @desc    Move asset from private to public folder
+ * @access  Private
+ */
+router.put('/:id/make-public', assetController.makePublic);
+
+/**
+ * @route   POST /api/assets/:id/invalidate-cache
+ * @desc    Clear CloudFront cache for asset (all transformations)
+ * @access  Private
+ */
+router.post('/:id/invalidate-cache', assetController.invalidateCache);
 
 export default router;

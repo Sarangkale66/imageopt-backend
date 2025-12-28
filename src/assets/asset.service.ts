@@ -123,4 +123,94 @@ export class AssetService {
   async countUserAssets(ownerId: string): Promise<number> {
     return Asset.countDocuments({ ownerId, isDeleted: false });
   }
+
+  /**
+   * Update privacy status of an asset
+   */
+  async updatePrivacyStatus(
+    assetId: string,
+    isPrivate: boolean,
+    newS3Key: string,
+    newCloudfrontUrl: string,
+    originalFolder: string | null
+  ): Promise<boolean> {
+    const result = await Asset.updateOne(
+      { _id: assetId },
+      {
+        $set: {
+          isPrivate,
+          s3Key: newS3Key,
+          cloudfrontUrl: newCloudfrontUrl,
+          originalFolder,
+        },
+      }
+    );
+    return result.modifiedCount > 0;
+  }
+
+  /**
+   * Get list of unique folders for a user
+   * Extracts folder names from s3Key (e.g., "userId/products/..." → "products")
+   */
+  async getUserFolders(ownerId: string): Promise<{ folder: string; count: number }[]> {
+    const result = await Asset.aggregate([
+      { 
+        $match: { 
+          ownerId: new mongoose.Types.ObjectId(ownerId), 
+          isDeleted: false 
+        } 
+      },
+      {
+        $project: {
+          // Extract folder from s3Key: "userId/folder/file.jpg" → "folder"
+          folder: {
+            $let: {
+              vars: {
+                parts: { $split: ['$s3Key', '/'] }
+              },
+              in: { $arrayElemAt: ['$$parts', 1] }
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$folder',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    return result.map(r => ({ folder: r._id, count: r.count }));
+  }
+
+  /**
+   * Get assets in a specific folder
+   */
+  async getAssetsByFolder(
+    ownerId: string, 
+    folder: string, 
+    page: number = 1, 
+    limit: number = 20
+  ): Promise<{ assets: IAsset[]; total: number }> {
+    // Build regex to match folder in s3Key: "userId/folder/..."
+    const folderPattern = new RegExp(`^${ownerId}/${folder}/`);
+    
+    const query = { 
+      ownerId, 
+      isDeleted: false,
+      s3Key: folderPattern
+    };
+
+    const [assets, total] = await Promise.all([
+      Asset.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Asset.countDocuments(query)
+    ]);
+
+    return { assets, total };
+  }
 }

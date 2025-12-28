@@ -6,6 +6,7 @@ import { AssetService } from './asset.service';
 import { S3Service } from '../aws/s3.service';
 import { S3UploadService } from '../aws/s3-upload.service';
 import { CloudFrontSignerService } from '../aws/cloudfront-signer.service';
+import { CloudFrontService } from '../aws/cloudfront.service';
 import { sendSuccess, sendError } from '../utils/response.util';
 import {
   validateUploadUrlRequest,
@@ -19,12 +20,14 @@ export class AssetController {
   private s3Service: S3Service;
   private s3UploadService: S3UploadService;
   private cloudFrontSignerService: CloudFrontSignerService;
+  private cloudFrontService: CloudFrontService;
 
   constructor() {
     this.assetService = new AssetService();
     this.s3Service = new S3Service();
     this.s3UploadService = new S3UploadService();
     this.cloudFrontSignerService = new CloudFrontSignerService();
+    this.cloudFrontService = new CloudFrontService();
   }
 
   /**
@@ -59,7 +62,7 @@ export class AssetController {
         uploadUrl,
         s3Key,
         s3Bucket,
-        expiresIn: 900, // 15 minutes
+        expiresIn: 1200, // 20 minutes
       }, 'Upload URL generated successfully');
     } catch (error: any) {
       return sendError(res, error.message ||'Failed to generate upload URL', 500);
@@ -317,8 +320,67 @@ export class AssetController {
   };
 
   /**
+   * GET /api/assets/folders
+   * Get list of unique folders for the user
+   */
+  listFolders = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return sendError(res, 'Not authenticated', 401);
+      }
+
+      const folders = await this.assetService.getUserFolders(req.user.userId);
+
+      return sendSuccess(res, {
+        folders,
+        total: folders.length,
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to get folders', 500);
+    }
+  };
+
+  /**
+   * GET /api/assets/folders/:folder
+   * Get assets in a specific folder
+   */
+  getAssetsByFolder = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return sendError(res, 'Not authenticated', 401);
+      }
+
+      const { folder } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      const { assets, total } = await this.assetService.getAssetsByFolder(
+        req.user.userId,
+        folder,
+        page,
+        limit
+      );
+
+      return sendSuccess(res, {
+        folder,
+        assets,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to get folder assets', 500);
+    }
+  };
+
+  /**
    * GET /api/assets/:id/signed-url
    * Generate a time-limited signed CloudFront URL for secure asset access
+   * Supports transformation params: format, width, height, quality
+   * URL format: /userId/private/image.jpg/format=webp?Expires=...&Signature=...
    */
   getSignedAssetUrl = async (req: Request, res: Response): Promise<Response> => {
     try {
@@ -358,10 +420,56 @@ export class AssetController {
         }
       }
 
+      // Get transformation params from query
+      const format = req.query.format as string | undefined;
+      const width = req.query.width as string | undefined;
+      const height = req.query.height as string | undefined;
+      const quality = req.query.quality as string | undefined;
+
+      // Check if asset is private (either by flag or by path)
+      const isPrivate = asset.isPrivate || asset.s3Key.includes('/private/');
+      
+      if (!isPrivate) {
+        return sendError(
+          res, 
+          'This asset is public. Use the regular CloudFront URL or move it to private first.', 
+          400
+        );
+      }
+
+      // Extract filename and extension for format
+      const fileName = asset.s3Key.split('/').pop() || '';
+      const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpeg';
+      
+      // Map common extensions to valid format values
+      const formatMap: Record<string, string> = {
+        'jpg': 'jpeg',
+        'jpeg': 'jpeg',
+        'png': 'png',
+        'webp': 'webp',
+        'avif': 'avif',
+        'gif': 'gif',
+      };
+      const defaultFormat = formatMap[fileExtension] || 'jpeg';
+      
+      // Use provided format or default to file extension format
+      const finalFormat = format || defaultFormat;
+      
+      // Build transformation string - format is always required!
+      const transformations: string[] = [`format=${finalFormat}`];
+      if (width) transformations.push(`width=${width}`);
+      if (height) transformations.push(`height=${height}`);
+      if (quality) transformations.push(`quality=${quality}`);
+      
+      const transformationPath = '/' + transformations.join(',');
+
+      // Use actual S3 path (asset is already in /private/ folder)
+      const signedUrlBase = `https://${this.s3Service.getCloudfrontDomain()}/${asset.s3Key}${transformationPath}`;
+
       // Generate signed URL
       const { signedUrl, expiresAt, expiresInSeconds: actualExpiry } =
         this.cloudFrontSignerService.generateSignedUrl(
-          asset.cloudfrontUrl,
+          signedUrlBase,
           expiresInSeconds
         );
 
@@ -373,9 +481,153 @@ export class AssetController {
           id: asset._id,
           name: asset.name,
         },
+        transformations: transformations.length > 0 ? transformations : undefined,
       });
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to generate signed URL', 500);
+    }
+  };
+
+  /**
+   * PUT /api/assets/:id/make-private
+   * Move asset to private folder (requires signed URL for access)
+   */
+  makePrivate = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return sendError(res, 'Not authenticated', 401);
+      }
+
+      const { id } = req.params;
+
+      // Check ownership
+      const asset = await this.assetService.getById(id, req.user.userId);
+      if (!asset) {
+        return sendError(res, 'Asset not found', 404);
+      }
+
+      // Check if already private
+      if (asset.isPrivate) {
+        return sendError(res, 'Asset is already private', 400);
+      }
+
+      // Move to private folder in S3
+      const { newS3Key, originalFolder } = await this.s3Service.moveToPrivate(asset.s3Key);
+
+      // Update database
+      const newCloudfrontUrl = this.s3Service.generateCloudfrontUrl(newS3Key);
+      await this.assetService.updatePrivacyStatus(id, true, newS3Key, newCloudfrontUrl, originalFolder);
+
+      return sendSuccess(res, {
+        message: 'Asset moved to private folder',
+        asset: {
+          id: asset._id,
+          name: asset.name,
+          isPrivate: true,
+          newS3Key,
+          cloudfrontUrl: newCloudfrontUrl,
+        },
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to make asset private', 500);
+    }
+  };
+
+  /**
+   * PUT /api/assets/:id/make-public
+   * Move asset from private to public folder
+   */
+  makePublic = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return sendError(res, 'Not authenticated', 401);
+      }
+
+      const { id } = req.params;
+      const targetFolder = (req.query.folder as string) || req.body.folder;
+
+      // Check ownership
+      const asset = await this.assetService.getById(id, req.user.userId);
+      if (!asset) {
+        return sendError(res, 'Asset not found', 404);
+      }
+
+      // Check if already public
+      if (!asset.isPrivate) {
+        return sendError(res, 'Asset is already public', 400);
+      }
+
+      // Determine target folder (use original or provided folder)
+      const folder = targetFolder || asset.originalFolder || 'public';
+
+      // Move to public folder in S3
+      const newS3Key = await this.s3Service.moveToPublic(asset.s3Key, folder);
+
+      // Update database
+      const newCloudfrontUrl = this.s3Service.generateCloudfrontUrl(newS3Key);
+      await this.assetService.updatePrivacyStatus(id, false, newS3Key, newCloudfrontUrl, null);
+
+      return sendSuccess(res, {
+        message: 'Asset moved to public folder',
+        asset: {
+          id: asset._id,
+          name: asset.name,
+          isPrivate: false,
+          newS3Key,
+          cloudfrontUrl: newCloudfrontUrl,
+          folder,
+        },
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to make asset public', 500);
+    }
+  };
+
+  /**
+   * POST /api/assets/:id/invalidate-cache
+   * Invalidate CloudFront cache for a specific asset (all transformations)
+   */
+  invalidateCache = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return sendError(res, 'Not authenticated', 401);
+      }
+
+      const { id } = req.params;
+
+      // Check if CloudFront invalidation is configured
+      if (!this.cloudFrontService.isConfigured()) {
+        return sendError(
+          res,
+          'Cache invalidation not configured. Set CLOUDFRONT_DISTRIBUTION_ID.',
+          503
+        );
+      }
+
+      // Check ownership
+      const asset = await this.assetService.getById(id, req.user.userId);
+      if (!asset) {
+        return sendError(res, 'Asset not found', 404);
+      }
+
+      // Invalidate cache for this asset and all its transformations
+      const result = await this.cloudFrontService.invalidateAsset(asset.s3Key);
+
+      return sendSuccess(res, {
+        message: 'Cache invalidation initiated',
+        asset: {
+          id: asset._id,
+          name: asset.name,
+          s3Key: asset.s3Key,
+        },
+        invalidation: {
+          id: result.invalidationId,
+          status: result.status,
+          paths: result.paths,
+        },
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to invalidate cache', 500);
     }
   };
 }

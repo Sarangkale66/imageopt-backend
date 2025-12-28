@@ -305,6 +305,79 @@
           }
         },
         {
+          "name": "List Folders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('📁 Folders:', jsonData.data.folders);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/folders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "folders"]
+            }
+          }
+        },
+        {
+          "name": "Get Folder Assets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('📦 Folder:', jsonData.data.folder);",
+                  "    console.log('Assets:', jsonData.data.assets.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/folders/products?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "folders", "products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Get Asset Details",
           "request": {
             "method": "GET",
@@ -337,6 +410,101 @@
               "raw": "{{baseUrl}}/api/assets/{{assetId}}/stats",
               "host": ["{{baseUrl}}"],
               "path": ["api", "assets", "{{assetId}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Signed URL (Default Expiry)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.signedUrl) {",
+                  "        console.log('🔐 Signed URL Generated!');",
+                  "        console.log('URL:', jsonData.data.signedUrl);",
+                  "        console.log('Expires At:', jsonData.data.expiresAt);",
+                  "        console.log('Expires In:', jsonData.data.expiresInSeconds, 'seconds');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/signed-url",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}", "signed-url"]
+            }
+          }
+        },
+        {
+          "name": "Get Signed URL (With Transformations)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.signedUrl) {",
+                  "        console.log('🔐 Signed URL Generated with Transformations!');",
+                  "        console.log('URL:', jsonData.data.signedUrl);",
+                  "        console.log('Expires At:', jsonData.data.expiresAt);",
+                  "        console.log('Expires In:', jsonData.data.expiresInSeconds, 'seconds');",
+                  "        console.log('Transformations:', jsonData.data.transformations);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/signed-url?expiresIn=7200&format=webp&width=800&quality=80",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}", "signed-url"],
+              "query": [
+                {
+                  "key": "expiresIn",
+                  "value": "7200",
+                  "description": "Custom expiry in seconds (2 hours)"
+                },
+                {
+                  "key": "format",
+                  "value": "webp",
+                  "description": "Output format: jpeg, png, webp, avif (optional - defaults to file extension)"
+                },
+                {
+                  "key": "width",
+                  "value": "800",
+                  "description": "Resize width in pixels (optional)"
+                },
+                {
+                  "key": "quality",
+                  "value": "80",
+                  "description": "Compression quality 1-100 (optional)"
+                }
+              ]
             }
           }
         },
@@ -385,6 +553,113 @@
               "raw": "{{baseUrl}}/api/assets/{{assetId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "assets", "{{assetId}}"]
+            }
+          }
+        },
+        {
+          "name": "Make Asset Private",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('🔒 Asset moved to private folder!');",
+                  "    console.log('New S3 Key:', jsonData.data.asset.newS3Key);",
+                  "    console.log('Now requires signed URL for access');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/make-private",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}", "make-private"]
+            }
+          }
+        },
+        {
+          "name": "Make Asset Public",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('🔓 Asset moved to public folder!');",
+                  "    console.log('New S3 Key:', jsonData.data.asset.newS3Key);",
+                  "    console.log('Folder:', jsonData.data.asset.folder);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/make-public?folder=products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}", "make-public"],
+              "query": [
+                {
+                  "key": "folder",
+                  "value": "products",
+                  "description": "Target folder name (optional, defaults to original folder or 'public')"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invalidate Cache",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('🗑️ Cache invalidation initiated!');",
+                  "    console.log('Invalidation ID:', jsonData.data.invalidation.id);",
+                  "    console.log('Status:', jsonData.data.invalidation.status);",
+                  "    console.log('Paths:', jsonData.data.invalidation.paths);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/invalidate-cache",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}", "invalidate-cache"]
             }
           }
         }
@@ -554,6 +829,58 @@
                 {
                   "key": "endDate",
                   "value": "2025-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Chart Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('📊 Chart Data:');",
+                  "    console.log('GroupBy:', jsonData.data.period.groupBy);",
+                  "    console.log('Data points:', jsonData.data.chart.labels.length);",
+                  "    console.log('Total requests:', jsonData.data.totals.requests);",
+                  "    console.log('Total cost: $' + jsonData.data.totals.costUSD);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/charts?startDate=2025-01-01&endDate=2025-12-31&groupBy=month",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "charts"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01",
+                  "description": "Start date (ISO format)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31",
+                  "description": "End date (ISO format)"
+                },
+                {
+                  "key": "groupBy",
+                  "value": "month",
+                  "description": "Group by: day, month, or year"
                 }
               ]
             }

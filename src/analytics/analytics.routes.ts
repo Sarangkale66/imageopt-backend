@@ -40,4 +40,14 @@ router.get('/bandwidth/assets', analyticsController.getPerAssetBandwidth);
  */
 router.get('/bandwidth/daily', analyticsController.getDailyBandwidth);
 
+/**
+ * @route   GET /api/analytics/charts
+ * @desc    Get chart-friendly data grouped by time period
+ * @access  Private
+ * @query   startDate - Start date (default: 30 days ago)
+ * @query   endDate - End date (default: now)
+ * @query   groupBy - Group by: day, month, or year (default: day)
+ */
+router.get('/charts', analyticsController.getChartData);
+
 export default router;

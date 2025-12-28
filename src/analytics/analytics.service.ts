@@ -28,6 +28,7 @@ interface UserBandwidthStats {
   totalRequests: number;
   cacheHits: number;
   cacheMisses: number;
+  errors: number;
   cacheHitRatio: string;
   costUSD: number;
   costBreakdown: CostBreakdown[];
@@ -104,9 +105,9 @@ export class AnalyticsService {
       if (gbInThisTier > 0) {
         breakdown.push({
           tier: tier.name,
-          gbUsed: parseFloat(gbInThisTier.toFixed(4)),
+          gbUsed: parseFloat(gbInThisTier.toFixed(6)),
           pricePerGB: tier.pricePerGB,
-          cost: parseFloat(tierCost.toFixed(4)),
+          cost: parseFloat(tierCost.toFixed(6)),
         });
         totalCost += tierCost;
       }
@@ -116,7 +117,7 @@ export class AnalyticsService {
     }
 
     return {
-      costUSD: parseFloat(totalCost.toFixed(4)),
+      costUSD: parseFloat(totalCost.toFixed(6)),
       breakdown,
     };
   }
@@ -166,6 +167,7 @@ export class AnalyticsService {
     }
 
     // Aggregate bandwidth stats
+    // Note: edgeResult can be 'Hit', 'Miss', 'Error', 'RefreshHit', or numeric codes
     const stats = await AssetLog.aggregate([
       { $match: matchQuery },
       {
@@ -176,7 +178,12 @@ export class AnalyticsService {
           cacheHits: {
             $sum: {
               $cond: [
-                { $in: ['$edgeResult', ['Hit', 'RefreshHit']] },
+                { 
+                  $or: [
+                    { $eq: ['$edgeResult', 'Hit'] },
+                    { $eq: ['$edgeResult', 'RefreshHit'] }
+                  ]
+                },
                 1,
                 0,
               ],
@@ -185,6 +192,20 @@ export class AnalyticsService {
           cacheMisses: {
             $sum: {
               $cond: [{ $eq: ['$edgeResult', 'Miss'] }, 1, 0],
+            },
+          },
+          errors: {
+            $sum: {
+              $cond: [
+                { 
+                  $or: [
+                    { $eq: ['$edgeResult', 'Error'] },
+                    { $not: { $in: ['$edgeResult', ['Hit', 'Miss', 'RefreshHit']] } }
+                  ]
+                },
+                1,
+                0,
+              ],
             },
           },
         },
@@ -199,13 +220,14 @@ export class AnalyticsService {
         totalRequests: 0,
         cacheHits: 0,
         cacheMisses: 0,
+        errors: 0,
         cacheHitRatio: '0.00%',
         costUSD: 0,
         costBreakdown: [],
       };
     }
 
-    const { totalBytes, totalRequests, cacheHits, cacheMisses } = stats[0];
+    const { totalBytes, totalRequests, cacheHits, cacheMisses, errors } = stats[0];
     const totalGB = totalBytes / (1024 * 1024 * 1024);
     const totalTB = totalGB / 1024;
     const hitRatio = totalRequests > 0 ? (cacheHits / totalRequests) * 100 : 0;
@@ -220,6 +242,7 @@ export class AnalyticsService {
       totalRequests,
       cacheHits,
       cacheMisses,
+      errors: errors || 0,
       cacheHitRatio: hitRatio.toFixed(2) + '%',
       costUSD,
       costBreakdown: breakdown,
@@ -355,5 +378,138 @@ export class AnalyticsService {
       requests: stat.requests,
       costUSD: this.calculateBandwidthCost(stat.bytes).costUSD,
     }));
+  }
+
+  /**
+   * Get chart data for frontend graphs (grouped by day/month/year)
+   * @param groupBy 'day' | 'month' | 'year'
+   */
+  async getChartData(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+    groupBy: 'day' | 'month' | 'year' = 'day'
+  ): Promise<{
+    labels: string[];
+    requests: number[];
+    bytes: number[];
+    costUSD: number[];
+    cacheHits: number[];
+    cacheMisses: number[];
+    errors: number[];
+  }> {
+    // Get user's assets
+    const userAssets = await Asset.find({ ownerId: userId });
+    
+    if (userAssets.length === 0) {
+      return {
+        labels: [],
+        requests: [],
+        bytes: [],
+        costUSD: [],
+        cacheHits: [],
+        cacheMisses: [],
+        errors: [],
+      };
+    }
+
+    const s3Keys = userAssets.map(asset => asset.s3Key);
+    const pathPatterns = s3Keys.map(key => new RegExp(`^/${key}(/|$)`));
+
+    // Date format based on groupBy
+    let dateFormat: string;
+    switch (groupBy) {
+      case 'year':
+        dateFormat = '%Y';
+        break;
+      case 'month':
+        dateFormat = '%Y-%m';
+        break;
+      case 'day':
+      default:
+        dateFormat = '%Y-%m-%d';
+        break;
+    }
+
+    const stats = await AssetLog.aggregate([
+      {
+        $match: {
+          $or: pathPatterns.map(pattern => ({ path: pattern })),
+          timestamp: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: dateFormat, date: '$timestamp' },
+          },
+          bytes: { $sum: '$bytes' },
+          requests: { $sum: 1 },
+          cacheHits: {
+            $sum: {
+              $cond: [
+                { 
+                  $or: [
+                    { $eq: ['$edgeResult', 'Hit'] },
+                    { $eq: ['$edgeResult', 'RefreshHit'] }
+                  ]
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          cacheMisses: {
+            $sum: {
+              $cond: [{ $eq: ['$edgeResult', 'Miss'] }, 1, 0],
+            },
+          },
+          errors: {
+            $sum: {
+              $cond: [
+                { 
+                  $or: [
+                    { $eq: ['$edgeResult', 'Error'] },
+                    { $not: { $in: ['$edgeResult', ['Hit', 'Miss', 'RefreshHit']] } }
+                  ]
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Transform to chart-friendly format
+    const labels: string[] = [];
+    const requests: number[] = [];
+    const bytes: number[] = [];
+    const costUSD: number[] = [];
+    const cacheHits: number[] = [];
+    const cacheMisses: number[] = [];
+    const errors: number[] = [];
+
+    for (const stat of stats) {
+      labels.push(stat._id);
+      requests.push(stat.requests);
+      bytes.push(stat.bytes);
+      costUSD.push(this.calculateBandwidthCost(stat.bytes).costUSD);
+      cacheHits.push(stat.cacheHits);
+      cacheMisses.push(stat.cacheMisses);
+      errors.push(stat.errors);
+    }
+
+    return {
+      labels,
+      requests,
+      bytes,
+      costUSD,
+      cacheHits,
+      cacheMisses,
+      errors,
+    };
   }
 }

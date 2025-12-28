@@ -194,4 +194,89 @@ export class AnalyticsController {
       return sendError(res, error.message || 'Failed to get daily bandwidth', 500);
     }
   };
+
+  /**
+   * GET /api/analytics/charts
+   * Get chart-friendly data grouped by day/month/year
+   * Query params: startDate (required), endDate (required), groupBy (day|month|year)
+   */
+  getChartData = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      if (!req.user) {
+        return sendError(res, 'Not authenticated', 401);
+      }
+
+      // Parse required date filters
+      const startDate = req.query.startDate 
+        ? new Date(req.query.startDate as string) 
+        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default: last 30 days
+      const endDate = req.query.endDate 
+        ? new Date(req.query.endDate as string) 
+        : new Date();
+
+      // Parse groupBy (day, month, year)
+      const groupBy = (req.query.groupBy as string)?.toLowerCase() || 'day';
+      if (!['day', 'month', 'year'].includes(groupBy)) {
+        return sendError(res, 'Invalid groupBy. Use: day, month, or year', 400);
+      }
+
+      // Validate dates
+      if (isNaN(startDate.getTime())) {
+        return sendError(res, 'Invalid startDate format. Use ISO string.', 400);
+      }
+      if (isNaN(endDate.getTime())) {
+        return sendError(res, 'Invalid endDate format. Use ISO string.', 400);
+      }
+
+      const chartData = await this.analyticsService.getChartData(
+        req.user.userId,
+        startDate,
+        endDate,
+        groupBy as 'day' | 'month' | 'year'
+      );
+
+      // Calculate totals
+      const totalRequests = chartData.requests.reduce((a, b) => a + b, 0);
+      const totalBytes = chartData.bytes.reduce((a, b) => a + b, 0);
+      const totalCost = chartData.costUSD.reduce((a, b) => a + b, 0);
+      const totalCacheHits = chartData.cacheHits.reduce((a, b) => a + b, 0);
+      const totalCacheMisses = chartData.cacheMisses.reduce((a, b) => a + b, 0);
+      const totalErrors = chartData.errors.reduce((a, b) => a + b, 0);
+
+      return sendSuccess(res, {
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          groupBy,
+        },
+        chart: {
+          labels: chartData.labels,
+          datasets: {
+            requests: chartData.requests,
+            bytes: chartData.bytes,
+            bytesGB: chartData.bytes.map(b => parseFloat((b / (1024 * 1024 * 1024)).toFixed(6))),
+            costUSD: chartData.costUSD,
+            cacheHits: chartData.cacheHits,
+            cacheMisses: chartData.cacheMisses,
+            errors: chartData.errors,
+          },
+        },
+        totals: {
+          requests: totalRequests,
+          bytes: totalBytes,
+          bytesGB: parseFloat((totalBytes / (1024 * 1024 * 1024)).toFixed(4)),
+          costUSD: parseFloat(totalCost.toFixed(6)),
+          cacheHits: totalCacheHits,
+          cacheMisses: totalCacheMisses,
+          errors: totalErrors,
+          cacheHitRatio: totalRequests > 0 
+            ? parseFloat(((totalCacheHits / totalRequests) * 100).toFixed(2)) 
+            : 0,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error getting chart data:', error);
+      return sendError(res, error.message || 'Failed to get chart data', 500);
+    }
+  };
 }

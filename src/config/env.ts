@@ -33,6 +33,7 @@ interface EnvConfig {
   // CloudFront Signed URLs (optional - for secure asset delivery)
   CLOUDFRONT_KEY_PAIR_ID: string;
   CLOUDFRONT_PRIVATE_KEY: string;
+  CLOUDFRONT_DISTRIBUTION_ID: string; // For cache invalidation
   SIGNED_URL_EXPIRY_SECONDS: number;
   
   // Upload limits
@@ -84,10 +85,11 @@ export const env: EnvConfig = {
   // CloudFront Signed URLs (optional - leave empty if not using signed URLs)
   CLOUDFRONT_KEY_PAIR_ID: process.env.CLOUDFRONT_KEY_PAIR_ID || '',
   CLOUDFRONT_PRIVATE_KEY: (process.env.CLOUDFRONT_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  CLOUDFRONT_DISTRIBUTION_ID: process.env.CLOUDFRONT_DISTRIBUTION_ID || '', // For cache invalidation
   SIGNED_URL_EXPIRY_SECONDS: parseInt(process.env.SIGNED_URL_EXPIRY_SECONDS || '3600'),
   
   MAX_UPLOAD_SIZE_MB: parseInt(getEnv('MAX_UPLOAD_SIZE_MB', '50')),
-  PRESIGNED_URL_EXPIRY_SECONDS: parseInt(getEnv('PRESIGNED_URL_EXPIRY_SECONDS', '900')),
+  PRESIGNED_URL_EXPIRY_SECONDS: parseInt(getEnv('PRESIGNED_URL_EXPIRY_SECONDS', '1200')),
   
   ASSET_RETENTION_HOURS: parseInt(getEnv('ASSET_RETENTION_HOURS', '90')),
   

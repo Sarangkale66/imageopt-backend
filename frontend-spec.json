@@ -1,0 +1,523 @@
+{
+  "project": {
+    "name": "ImageOpt Dashboard",
+    "description": "A modern, premium image optimization platform dashboard with analytics, asset management, and folder organization",
+    "backend_base_url": "http://localhost:5000",
+    "cloudfront_domain": "https://d1bfw6cejuxgtj.cloudfront.net"
+  },
+
+  "authentication": {
+    "description": "JWT-based authentication. Token stored in localStorage.",
+    "endpoints": {
+      "register": {
+        "method": "POST",
+        "url": "/api/auth/register",
+        "body": { "email": "string", "password": "string", "name": "string" },
+        "response": { "token": "string", "user": "object" }
+      },
+      "login": {
+        "method": "POST",
+        "url": "/api/auth/login",
+        "body": { "email": "string", "password": "string" },
+        "response": { "token": "string", "user": "object" }
+      },
+      "me": {
+        "method": "GET",
+        "url": "/api/auth/me",
+        "headers": { "Authorization": "Bearer {token}" },
+        "response": { "user": "object" }
+      }
+    }
+  },
+
+  "pages": {
+    "login": {
+      "route": "/login",
+      "description": "Login page with email/password form",
+      "features": [
+        "Email and password input fields",
+        "Remember me checkbox",
+        "Link to register page",
+        "Error handling for invalid credentials",
+        "Redirect to dashboard after successful login"
+      ]
+    },
+
+    "register": {
+      "route": "/register",
+      "description": "Registration page for new users",
+      "features": [
+        "Name, email, password, confirm password fields",
+        "Password strength indicator",
+        "Terms and conditions checkbox",
+        "Link to login page",
+        "Auto-login after successful registration"
+      ]
+    },
+
+    "dashboard": {
+      "route": "/dashboard",
+      "description": "Main analytics dashboard with charts and stats",
+      "requires_auth": true,
+      "sections": {
+        "header": {
+          "elements": [
+            "Welcome message with user name",
+            "Date range picker (today, 7 days, 30 days, this month, this year, custom)",
+            "Refresh button"
+          ]
+        },
+
+        "stats_cards": {
+          "description": "Top row with key metrics in card format",
+          "cards": [
+            {
+              "title": "Total Requests",
+              "value": "totals.requests",
+              "icon": "chart-line",
+              "color": "blue"
+            },
+            {
+              "title": "Bandwidth Used",
+              "value": "totals.bytesGB",
+              "unit": "GB",
+              "icon": "database",
+              "color": "purple"
+            },
+            {
+              "title": "Total Cost",
+              "value": "totals.costUSD",
+              "unit": "$",
+              "icon": "dollar-sign",
+              "color": "green"
+            },
+            {
+              "title": "Cache Hit Ratio",
+              "value": "totals.cacheHitRatio",
+              "unit": "%",
+              "icon": "zap",
+              "color": "orange"
+            },
+            {
+              "title": "Total Assets",
+              "value": "from GET /api/assets count",
+              "icon": "image",
+              "color": "pink"
+            },
+            {
+              "title": "Errors",
+              "value": "totals.errors",
+              "icon": "alert-triangle",
+              "color": "red"
+            }
+          ]
+        },
+
+        "charts": {
+          "description": "Interactive charts using Chart.js or Recharts",
+          "charts": [
+            {
+              "title": "Requests Over Time",
+              "type": "line",
+              "x_axis": "chart.labels",
+              "y_axis": "chart.datasets.requests",
+              "color": "#3B82F6"
+            },
+            {
+              "title": "Bandwidth Usage",
+              "type": "area",
+              "x_axis": "chart.labels",
+              "y_axis": "chart.datasets.bytesGB",
+              "color": "#8B5CF6"
+            },
+            {
+              "title": "Cost Over Time",
+              "type": "bar",
+              "x_axis": "chart.labels",
+              "y_axis": "chart.datasets.costUSD",
+              "color": "#10B981"
+            },
+            {
+              "title": "Cache Performance",
+              "type": "stacked-bar",
+              "x_axis": "chart.labels",
+              "datasets": [
+                { "label": "Cache Hits", "data": "chart.datasets.cacheHits", "color": "#10B981" },
+                { "label": "Cache Misses", "data": "chart.datasets.cacheMisses", "color": "#F59E0B" },
+                { "label": "Errors", "data": "chart.datasets.errors", "color": "#EF4444" }
+              ]
+            }
+          ]
+        },
+
+        "top_assets_table": {
+          "description": "Table showing top assets by bandwidth usage",
+          "endpoint": "GET /api/analytics/bandwidth/assets",
+          "columns": [
+            { "header": "Asset", "field": "name" },
+            { "header": "Requests", "field": "requests" },
+            { "header": "Bandwidth", "field": "totalGB", "suffix": " GB" },
+            { "header": "Cache Hit %", "field": "cacheHitRatio" },
+            { "header": "Cost", "field": "costUSD", "prefix": "$" }
+          ],
+          "actions": ["View", "Invalidate Cache"]
+        },
+
+        "groupby_toggle": {
+          "description": "Toggle between Day, Month, Year grouping",
+          "options": ["day", "month", "year"],
+          "api_param": "groupBy"
+        }
+      },
+
+      "api_endpoint": {
+        "method": "GET",
+        "url": "/api/analytics/charts",
+        "params": {
+          "startDate": "ISO date string",
+          "endDate": "ISO date string",
+          "groupBy": "day | month | year"
+        }
+      }
+    },
+
+    "assets": {
+      "route": "/assets",
+      "description": "Asset library with folder organization",
+      "requires_auth": true,
+      "layout": "sidebar + main content",
+      
+      "sidebar": {
+        "description": "Folder navigation sidebar",
+        "features": [
+          "List all folders from GET /api/assets/folders",
+          "Show asset count per folder",
+          "'All Assets' option at top",
+          "'+ New Folder' button",
+          "Click folder to filter assets"
+        ],
+        "new_folder_modal": {
+          "description": "Modal to create new folder",
+          "input": "Folder name (alphanumeric, hyphens, underscores only)",
+          "validation": "No spaces, no special chars, not 'private'",
+          "note": "Folder created automatically on first asset upload"
+        }
+      },
+
+      "main_content": {
+        "description": "Grid of asset cards",
+        "view_modes": ["grid", "list"],
+        "asset_card": {
+          "elements": [
+            "Thumbnail image (using CloudFront URL with width=200)",
+            "Asset name",
+            "File size",
+            "Privacy badge (public/private)",
+            "Created date"
+          ],
+          "hover_actions": ["Preview", "Copy URL", "Delete", "Make Private/Public"]
+        },
+
+        "filters": [
+          { "type": "search", "placeholder": "Search assets..." },
+          { "type": "select", "options": ["All", "Images", "Videos", "Files"] },
+          { "type": "select", "options": ["Newest", "Oldest", "Name A-Z", "Size"] }
+        ],
+
+        "pagination": {
+          "type": "infinite-scroll or numbered",
+          "api_param": "page, limit"
+        }
+      },
+
+      "asset_detail_modal": {
+        "description": "Modal showing full asset details",
+        "sections": [
+          {
+            "title": "Preview",
+            "content": "Full-size image preview"
+          },
+          {
+            "title": "Info",
+            "fields": ["Name", "Size", "Type", "Created", "Folder", "Privacy"]
+          },
+          {
+            "title": "URLs",
+            "fields": [
+              { "label": "Original", "value": "cloudfrontUrl without transformations" },
+              { "label": "Optimized WebP", "value": "cloudfrontUrl + format=webp" },
+              { "label": "Thumbnail", "value": "cloudfrontUrl + width=200" }
+            ],
+            "copy_button": true
+          },
+          {
+            "title": "Transformations Preview",
+            "description": "Live preview with format/width/height/quality sliders"
+          },
+          {
+            "title": "Analytics",
+            "fields": ["Total Requests", "Bandwidth Used", "Cache Hit Ratio"]
+          }
+        ],
+        "actions": [
+          "Copy URL",
+          "Download Original",
+          "Make Private / Make Public",
+          "Invalidate Cache",
+          "Delete"
+        ]
+      },
+
+      "api_endpoints": {
+        "list_folders": {
+          "method": "GET",
+          "url": "/api/assets/folders",
+          "response": { "folders": [{ "folder": "string", "count": "number" }] }
+        },
+        "list_assets_in_folder": {
+          "method": "GET",
+          "url": "/api/assets/folders/{folder}",
+          "params": { "page": 1, "limit": 20 }
+        },
+        "list_all_assets": {
+          "method": "GET",
+          "url": "/api/assets",
+          "params": { "page": 1, "limit": 20 }
+        },
+        "get_asset": {
+          "method": "GET",
+          "url": "/api/assets/{id}"
+        },
+        "delete_asset": {
+          "method": "DELETE",
+          "url": "/api/assets/{id}"
+        },
+        "make_private": {
+          "method": "PUT",
+          "url": "/api/assets/{id}/make-private"
+        },
+        "make_public": {
+          "method": "PUT",
+          "url": "/api/assets/{id}/make-public",
+          "body": { "targetFolder": "original folder or new folder" }
+        },
+        "invalidate_cache": {
+          "method": "POST",
+          "url": "/api/assets/{id}/invalidate-cache"
+        }
+      }
+    },
+
+    "upload": {
+      "route": "/upload",
+      "description": "Upload page with drag-drop and folder selection",
+      "requires_auth": true,
+
+      "upload_flow": {
+        "description": "Step-by-step upload process using PRESIGNED URL",
+        "steps": [
+          {
+            "step": 1,
+            "title": "Select Files",
+            "description": "Drag-drop zone or file picker",
+            "accepted_types": ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"],
+            "max_size_mb": 50,
+            "multiple": true
+          },
+          {
+            "step": 2,
+            "title": "Choose Folder",
+            "description": "Dropdown to select existing folder or create new",
+            "options": [
+              "Existing folders from GET /api/assets/folders",
+              "+ Create New Folder option"
+            ],
+            "default": "uploads"
+          },
+          {
+            "step": 3,
+            "title": "Get Presigned URL",
+            "api": {
+              "method": "POST",
+              "url": "/api/assets/upload-url",
+              "body": {
+                "fileName": "original filename",
+                "fileType": "image/jpeg",
+                "fileSize": 1048576,
+                "folder": "selected folder name",
+                "customFileName": "optional custom name"
+              },
+              "response": {
+                "uploadUrl": "presigned S3 URL",
+                "s3Key": "userId/folder/filename.jpg",
+                "s3Bucket": "imageopt-original-xxx",
+                "expiresIn": 1200
+              }
+            }
+          },
+          {
+            "step": 4,
+            "title": "Upload to S3",
+            "description": "PUT file directly to S3 using presigned URL",
+            "request": {
+              "method": "PUT",
+              "url": "{uploadUrl from step 3}",
+              "headers": { "Content-Type": "{fileType}" },
+              "body": "binary file data"
+            },
+            "show_progress": true
+          },
+          {
+            "step": 5,
+            "title": "Save Asset Metadata",
+            "api": {
+              "method": "POST",
+              "url": "/api/assets",
+              "body": {
+                "fileName": "original filename",
+                "fileType": "image/jpeg",
+                "fileSize": 1048576,
+                "s3Key": "from step 3 response",
+                "s3Bucket": "from step 3 response"
+              },
+              "response": {
+                "asset": {
+                  "_id": "asset id",
+                  "name": "filename",
+                  "cloudfrontUrl": "https://cf.net/userId/folder/file.jpg/format=jpeg"
+                }
+              }
+            }
+          }
+        ]
+      },
+
+      "ui_components": {
+        "dropzone": {
+          "description": "Large drag-drop area with dashed border",
+          "states": ["idle", "drag-over", "uploading", "success", "error"],
+          "icon": "cloud-upload",
+          "text": "Drag & drop images here or click to browse"
+        },
+        "folder_selector": {
+          "type": "combobox",
+          "placeholder": "Select or create folder",
+          "create_option": "Type to create new folder..."
+        },
+        "upload_queue": {
+          "description": "List of files being uploaded",
+          "per_file": ["filename", "size", "progress bar", "status icon", "cancel button"]
+        },
+        "success_panel": {
+          "description": "After upload success",
+          "elements": [
+            "Thumbnail preview",
+            "CloudFront URL with copy button",
+            "Quick transformation buttons (WebP, Thumbnail)",
+            "'Upload More' button",
+            "'Go to Assets' button"
+          ]
+        }
+      },
+
+      "folder_rules": {
+        "description": "IMPORTANT: Folder structure rules",
+        "rules": [
+          "Only single-level folders allowed (no nesting)",
+          "Valid: 'products', 'banners', 'avatars'",
+          "Invalid: 'products/summer', 'a/b/c'",
+          "'private' folder is reserved - cannot upload directly",
+          "Folder created automatically on first upload",
+          "Folder name: alphanumeric, hyphens, underscores only"
+        ],
+        "path_format": "{userId}/{folder}/{filename}/format={extension}"
+      }
+    },
+
+    "settings": {
+      "route": "/settings",
+      "description": "User settings and account management",
+      "requires_auth": true,
+      "sections": [
+        {
+          "title": "Profile",
+          "fields": ["Name", "Email"]
+        },
+        {
+          "title": "Change Password",
+          "fields": ["Current Password", "New Password", "Confirm Password"]
+        },
+        {
+          "title": "API Keys",
+          "description": "Future: Generate API keys for programmatic access"
+        },
+        {
+          "title": "Billing",
+          "description": "Show current cost breakdown and pricing tiers"
+        }
+      ]
+    }
+  },
+
+  "global_components": {
+    "navbar": {
+      "elements": [
+        { "type": "logo", "link": "/dashboard" },
+        { "type": "nav-link", "text": "Dashboard", "link": "/dashboard", "icon": "home" },
+        { "type": "nav-link", "text": "Assets", "link": "/assets", "icon": "image" },
+        { "type": "nav-link", "text": "Upload", "link": "/upload", "icon": "upload" },
+        { "type": "spacer" },
+        { "type": "user-menu", "options": ["Profile", "Settings", "Logout"] }
+      ]
+    },
+    "toast_notifications": {
+      "types": ["success", "error", "warning", "info"],
+      "position": "top-right"
+    },
+    "loading_states": {
+      "types": ["spinner", "skeleton", "progress-bar"]
+    },
+    "error_boundary": {
+      "description": "Graceful error handling with retry option"
+    }
+  },
+
+  "design_guidelines": {
+    "theme": "Modern dark theme with glassmorphism effects",
+    "colors": {
+      "primary": "#3B82F6",
+      "secondary": "#8B5CF6",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "background": "#0F172A",
+      "surface": "#1E293B",
+      "text": "#F8FAFC"
+    },
+    "fonts": {
+      "primary": "Inter or Outfit (Google Fonts)",
+      "monospace": "JetBrains Mono or Fira Code"
+    },
+    "effects": [
+      "Glassmorphism cards with blur backdrop",
+      "Subtle gradients",
+      "Smooth hover transitions (200-300ms)",
+      "Micro-animations on interactions"
+    ],
+    "responsive": {
+      "breakpoints": {
+        "mobile": "< 640px",
+        "tablet": "640px - 1024px",
+        "desktop": "> 1024px"
+      }
+    }
+  },
+
+  "cloudfront_url_examples": {
+    "original": "https://d1bfw6cejuxgtj.cloudfront.net/{userId}/{folder}/{image.jpg}/format=jpeg",
+    "webp": "https://d1bfw6cejuxgtj.cloudfront.net/{userId}/{folder}/{image.jpg}/format=webp",
+    "thumbnail": "https://d1bfw6cejuxgtj.cloudfront.net/{userId}/{folder}/{image.jpg}/format=webp,width=200",
+    "custom_size": "https://d1bfw6cejuxgtj.cloudfront.net/{userId}/{folder}/{image.jpg}/format=webp,width=800,height=600",
+    "with_quality": "https://d1bfw6cejuxgtj.cloudfront.net/{userId}/{folder}/{image.jpg}/format=webp,width=800,quality=80"
+  }
+}

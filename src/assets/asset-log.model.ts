@@ -8,11 +8,12 @@ export interface IAssetLog extends Document {
   path: string;
   bytes: number;
   requestBytes?: number;
-  edgeResult: 'Hit' | 'Miss' | 'Error' | 'RefreshHit';
+  edgeResult: string; // Hit, Miss, Error, RefreshHit, or numeric codes
   distribution?: string;
   status?: number;
   clientIp: string;
-  country?: string;
+  countryCode?: string; // Country code from CloudFront logs
+  deviceType?: string;  // Device type from CloudFront logs
   timestamp: Date;
 }
 
@@ -32,26 +33,33 @@ const assetLogSchema = new Schema<IAssetLog>(
     bytes: {
       type: Number,
       required: true,
+      default: 0,
     },
     requestBytes: {
       type: Number,
+      default: 0,
     },
     edgeResult: {
       type: String,
-      enum: ['Hit', 'Miss', 'Error', 'RefreshHit'],
       required: true,
+      index: true,
+      // No enum - can be 'Hit', 'Miss', 'Error', 'RefreshHit', or numeric codes
     },
     distribution: {
       type: String,
     },
     status: {
       type: Number,
+      default: 0,
     },
     clientIp: {
       type: String,
       required: true,
     },
-    country: {
+    countryCode: {
+      type: String,
+    },
+    deviceType: {
       type: String,
     },
     timestamp: {
@@ -63,6 +71,7 @@ const assetLogSchema = new Schema<IAssetLog>(
   {
     timestamps: false, // We have our own timestamp field
     collection: 'bandwidth_logs', // Use existing collection from Phase 4
+    strict: false, // Allow fields not in schema (for backward compatibility)
   }
 );
 
@@ -70,5 +79,7 @@ const assetLogSchema = new Schema<IAssetLog>(
 assetLogSchema.index({ assetId: 1, timestamp: -1 });
 assetLogSchema.index({ path: 1, timestamp: -1 });
 assetLogSchema.index({ timestamp: -1 });
+assetLogSchema.index({ edgeResult: 1 });
 
 export const AssetLog = mongoose.model<IAssetLog>('AssetLog', assetLogSchema);
+

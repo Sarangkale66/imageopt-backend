@@ -11,6 +11,8 @@ export interface IAsset extends Document {
   s3Key: string;
   cloudfrontUrl: string;
   sizeBytes: number;
+  isPrivate: boolean;
+  originalFolder?: string; // Stores original folder before moving to private
   metadata?: {
     width?: number;
     height?: number;
@@ -64,6 +66,14 @@ const assetSchema = new Schema<IAsset>(
     isDeleted: {
       type: Boolean,
       default: false,
+    },
+    isPrivate: {
+      type: Boolean,
+      default: false,
+    },
+    originalFolder: {
+      type: String,
+      default: null,
     },
   },
   {
